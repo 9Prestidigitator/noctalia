@@ -337,6 +337,7 @@ location = "https://example.invalid/bad"
     c.osd.position = "bottom_left";
     c.osd.positionVertical = "top_right";
     c.osd.orientation = "vertical";
+    c.osd.hideDelayMs = 2750;
     c.osd.scale = 1.4F;
     c.osd.backgroundOpacity = 0.42F;
     c.osd.border = false;

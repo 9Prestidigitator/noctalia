@@ -2093,6 +2093,18 @@ namespace settings {
         "hud overlay volume brightness vertical slider"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-hide-delay.label"),
+        tr("settings.schema.shell.osd-hide-delay.description"), {"osd", "hide_delay_ms"},
+        StepperSetting{
+            .value = static_cast<int>(cfg.osd.hideDelayMs),
+            .minValue = static_cast<int>(noctalia::config::schema::kOsdHideDelayMsRange.min.value()),
+            .maxValue = static_cast<int>(noctalia::config::schema::kOsdHideDelayMsRange.max.value()),
+            .step = static_cast<int>(noctalia::config::schema::kOsdHideDelayMsRange.step.value()),
+            .valueSuffix = "ms",
+        },
+        "hud overlay popup timeout duration visible"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-scale.label"),
         tr("settings.schema.shell.osd-scale.description"), {"osd", "scale"},
         sliderFor(cfg.osd.scale, noctalia::config::schema::kScaleRange, false),
