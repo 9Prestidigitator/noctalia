@@ -253,7 +253,6 @@
       "uptime": "起動時間　–　{uptime}",
       "weather": {
         "data-unavailable": "天気のデータは無効化されています",
-        "disabled": "天気は設定から無効化されています",
         "fetching": "天気予報を取得中…"
       }
     },

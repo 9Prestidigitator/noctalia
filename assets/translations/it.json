@@ -308,7 +308,6 @@
       "uptime": "Tempo di attività – {uptime}",
       "weather": {
         "data-unavailable": "Dati meteo non disponibili.",
-        "disabled": "Il meteo è disabilitato nella configurazione.",
         "fetching": "Recupero previsioni meteo..."
       }
     },
