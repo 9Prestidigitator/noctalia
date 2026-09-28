@@ -9,6 +9,7 @@
 #include <array>
 #include <cctype>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -735,8 +736,10 @@ std::vector<DesktopEntry> scanDesktopEntries(std::string_view language) {
     }
   }
 
-  // Sort by name for consistent ordering
-  std::ranges::sort(entries, {}, &DesktopEntry::nameLower);
+  // Collate lowercased names so ordering follows LC_COLLATE and stays case-insensitive under the C locale.
+  std::ranges::sort(entries, [](const DesktopEntry& a, const DesktopEntry& b) {
+    return std::strcoll(a.nameLower.c_str(), b.nameLower.c_str()) < 0;
+  });
 
   return entries;
 }
