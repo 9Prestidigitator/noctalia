@@ -53,6 +53,7 @@ namespace {
   constexpr Logger kLog("window-switcher");
   constexpr std::size_t kVisibleCards = 5;
   constexpr float kVisibleOpacityThreshold = 0.01F;
+  constexpr std::uint32_t kShortcutModifierMask = KeyMod::Ctrl | KeyMod::Alt | KeyMod::Super;
 
   [[nodiscard]] WindowSwitcherStyleLayout computeSwitcherLayout(
       float screenWidth, float screenHeight, float scale, std::size_t windowCount, std::size_t selectedIndex,
@@ -111,8 +112,6 @@ namespace {
   [[nodiscard]] float shellUiScale(const ConfigService* config) noexcept {
     return config != nullptr ? config->config().accessibility.uiScale : 1.0F;
   }
-
-  [[nodiscard]] bool isAltModifier(std::uint32_t sym) noexcept { return sym == XKB_KEY_Alt_L || sym == XKB_KEY_Alt_R; }
 
   [[nodiscard]] const WaylandOutput* findOutput(const WaylandConnection& wayland, wl_output* output) {
     for (const auto& entry : wayland.outputs()) {
@@ -629,7 +628,8 @@ void WindowSwitcher::registerIpc(IpcService& ipc) {
     if (output == nullptr) {
       return "error: no output available\n";
     }
-    show(output);
+    const std::uint32_t modifiers = m_active && m_wayland != nullptr ? m_wayland->keyboardModifiers() : 0;
+    showFromShortcut(output, modifiers);
     return "ok\n";
   });
 }
@@ -702,7 +702,18 @@ void WindowSwitcher::onToplevelChange() {
   requestSceneUpdate();
 }
 
-void WindowSwitcher::show(wl_output* output) {
+void WindowSwitcher::show(wl_output* output) { showWithDirection(output, 1); }
+
+void WindowSwitcher::showFromShortcut(wl_output* output, std::uint32_t modifiers) {
+  showWithDirection(output, (modifiers & KeyMod::Shift) != 0 ? -1 : 1);
+  if (!m_active) {
+    return;
+  }
+  m_shortcutSession = true;
+  captureShortcutModifiers(modifiers);
+}
+
+void WindowSwitcher::showWithDirection(wl_output* output, int direction) {
   if (m_wayland == nullptr || m_renderContext == nullptr || m_platform == nullptr || output == nullptr) {
     return;
   }
@@ -711,13 +722,15 @@ void WindowSwitcher::show(wl_output* output) {
   const bool outputChanged = output != m_output;
   if (!wasActive) {
     recordFocusedWindow();
+    m_shortcutModifiers = 0;
+    m_shortcutSession = false;
   }
   m_output = output;
   const auto focusedId = m_platform->focusedCompositorWindowId();
   refreshWindows();
 
   if (wasActive) {
-    cycleSelection(1);
+    cycleSelection(direction);
   } else {
     bool focusedListedFirst = false;
     if (focusedId.has_value() && !m_windows.empty()) {
@@ -727,7 +740,10 @@ void WindowSwitcher::show(wl_output* output) {
       focusedListedFirst = frontKey == focusedCompare
           || (compositors::isHyprland() && compositors::hyprland::windowIdsEqual(frontKey, focusedCompare));
     }
-    m_selectedIndex = (m_windows.size() > 1 && focusedListedFirst) ? 1 : 0;
+    m_selectedIndex = 0;
+    if (m_windows.size() > 1 && focusedListedFirst) {
+      m_selectedIndex = direction < 0 ? m_windows.size() - 1 : 1;
+    }
   }
   m_active = true;
 
@@ -742,6 +758,12 @@ void WindowSwitcher::show(wl_output* output) {
   }
 }
 
+void WindowSwitcher::captureShortcutModifiers(std::uint32_t modifiers) {
+  if (m_shortcutModifiers == 0) {
+    m_shortcutModifiers = modifiers & kShortcutModifierMask;
+  }
+}
+
 void WindowSwitcher::hide() {
   if (!m_active && m_instance == nullptr) {
     return;
@@ -751,6 +773,8 @@ void WindowSwitcher::hide() {
   m_output = nullptr;
   m_windows.clear();
   m_selectedIndex = 0;
+  m_shortcutModifiers = 0;
+  m_shortcutSession = false;
   cancelThumbnailCaptures();
   destroySurface();
 }
@@ -1208,17 +1232,18 @@ bool WindowSwitcher::matchesTrigger(const KeyboardEvent& event) const noexcept {
   if (m_config == nullptr) {
     return false;
   }
-  if ((event.modifiers & KeyMod::Alt) == 0 || (event.modifiers & KeyMod::Super) != 0) {
+  const std::uint32_t shortcutModifiers = event.modifiers & kShortcutModifierMask;
+  if (shortcutModifiers == 0) {
     return false;
   }
 
-  const std::uint32_t normalizedModifiers = event.modifiers & ~(KeyMod::Alt | KeyMod::Super);
+  const std::uint32_t normalizedModifiers = event.modifiers & ~shortcutModifiers;
   return m_config->matchesKeybind(KeybindAction::TabNext, event.sym, normalizedModifiers)
       || m_config->matchesKeybind(KeybindAction::TabPrevious, event.sym, normalizedModifiers);
 }
 
 bool WindowSwitcher::isModifierRelease(const KeyboardEvent& event) const noexcept {
-  return !event.pressed && (isAltModifier(event.sym) || event.sym == XKB_KEY_Super_L || event.sym == XKB_KEY_Super_R);
+  return !event.pressed && (KeySymbol::modifierMask(event.sym) & m_shortcutModifiers) != 0;
 }
 
 bool WindowSwitcher::onKeyboardEvent(const KeyboardEvent& event) {
@@ -1239,10 +1264,17 @@ bool WindowSwitcher::onKeyboardEvent(const KeyboardEvent& event) {
       if (output == nullptr) {
         return false;
       }
-      show(output);
+      showFromShortcut(output, event.modifiers);
       return true;
     }
     return false;
+  }
+
+  if (m_shortcutSession) {
+    captureShortcutModifiers(event.modifiers);
+    if (!event.pressed) {
+      captureShortcutModifiers(KeySymbol::modifierMask(event.sym));
+    }
   }
 
   if (isModifierRelease(event)) {
@@ -1255,7 +1287,7 @@ bool WindowSwitcher::onKeyboardEvent(const KeyboardEvent& event) {
     return true;
   }
 
-  const std::uint32_t normalizedModifiers = event.modifiers & ~(KeyMod::Alt | KeyMod::Super);
+  const std::uint32_t normalizedModifiers = event.modifiers & ~m_shortcutModifiers;
   auto matchesAction = [&](KeybindAction action) {
     if (m_config != nullptr) {
       return m_config->matchesKeybind(action, event.sym, normalizedModifiers);

@@ -4886,7 +4886,7 @@
     "count": "{count} window",
     "count-plural": "{count} windows",
     "empty": "No open windows",
-    "hint": "Tab · Shift+Tab · Arrow keys · Release Alt to switch · Esc to cancel",
+    "hint": "Tab · Shift+Tab · Arrow keys · Release the shortcut modifier to switch · Esc to cancel",
     "title": "Windows"
   }
 }
