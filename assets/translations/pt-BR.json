@@ -308,7 +308,6 @@
       "uptime": "Tempo Ativo – {uptime}",
       "weather": {
         "data-unavailable": "Dados de clima indisponíveis",
-        "disabled": "O clima está desabilitado nas configurações.",
         "fetching": "Buscando previsão..."
       }
     },
@@ -4886,7 +4885,7 @@
     "count": "{count} janela",
     "count-plural": "{count} janelas",
     "empty": "Sem janelas abertas",
-    "hint": "Tab · Shift+Tab · Setas · Solte o Alt para alterar · Esc para cancelar",
+    "hint": "Tab · Shift+Tab · Setas · Solte o modificador de atalho para alterar · Esc para cancelar",
     "title": "Janelas"
   }
 }

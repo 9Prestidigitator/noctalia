@@ -308,7 +308,6 @@
       "uptime": "Uptime – {uptime}",
       "weather": {
         "data-unavailable": "Weather data unavailable.",
-        "disabled": "Weather is disabled in config.",
         "fetching": "Fetching forecast…"
       }
     },
