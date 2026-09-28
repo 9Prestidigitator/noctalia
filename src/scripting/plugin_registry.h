@@ -77,9 +77,4 @@ namespace scripting {
     bool m_scanned = false;
   };
 
-  // True when `fullEntryId` ("author/plugin:entry") resolves to a registered entry of
-  // `kind`. False for entries of plugins that are disabled or gone, so hosts tearing
-  // down instances on a plugin change should match the id syntax instead.
-  [[nodiscard]] bool isPluginEntryOfKind(std::string_view fullEntryId, PluginEntryKind kind);
-
 } // namespace scripting
