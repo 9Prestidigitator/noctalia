@@ -2425,7 +2425,7 @@
           "label": "Notification Filters"
         },
         "follow-focused-output": {
-          "description": "Show new notification toasts on the focused monitor; visible toasts stay where they appeared",
+          "description": "Show new notification toasts on the focused monitor",
           "label": "Follow Focused Output"
         },
         "history-retention-hours": {
@@ -3113,6 +3113,10 @@
           "description": "Master switch for all OSD popups; when off no OSD is shown",
           "label": "Enable OSD"
         },
+        "osd-follow-focused-output": {
+          "description": "Show new OSD popups on the focused monitor; visible popups stay where they appeared",
+          "label": "Follow Focused Output"
+        },
         "osd-hide-delay": {
           "description": "How long an OSD popup remains visible before hiding",
           "label": "Hide Delay"
@@ -3176,10 +3180,6 @@
         "osd-kinds-wifi": {
           "description": "Show an OSD popup when Wi-Fi is toggled",
           "label": "Wi-Fi"
-        },
-        "osd-follow-focused-output": {
-          "description": "Show new OSD popups on the focused monitor; visible popups stay where they appeared",
-          "label": "Follow Focused Output"
         },
         "osd-monitors": {
           "description": "Choose which monitors show OSD popups; leave empty to show on all monitors",
