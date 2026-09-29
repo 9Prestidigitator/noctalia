@@ -204,6 +204,7 @@ location = "https://example.invalid/bad"
     bar.layer = "overlay";
     bar.thickness = 44;
     bar.backgroundOpacity = 0.85F;
+    bar.compositorBlur = false;
     bar.border = colorSpecFromConfigString("#123456");
     bar.borderWidth = 2.0F;
     bar.radius = 18;
@@ -277,6 +278,7 @@ location = "https://example.invalid/bad"
     ovr.layer = "top";
     ovr.thickness = 50;
     ovr.backgroundOpacity = 0.7F;
+    ovr.compositorBlur = true;
     ovr.border = colorSpecFromConfigString("#a1a2a3");
     ovr.borderWidth = 3.0F;
     ovr.radius = 22;
@@ -706,7 +708,7 @@ location = "https://example.invalid/bad"
     }
   }
 
-  void checkMonitorFontScaleChangeSet() {
+  void checkMonitorOverrideChangeSet() {
     Config before;
     BarConfig bar;
     bar.name = "default";
@@ -715,10 +717,16 @@ location = "https://example.invalid/bad"
     bar.monitorOverrides.push_back(monitor);
     before.bars.push_back(bar);
 
-    Config after = before;
-    after.bars.front().monitorOverrides.front().fontScale = 1.5F;
-    if (!computeConfigChangeSet(before, after).bars) {
+    Config fontScaleChanged = before;
+    fontScaleChanged.bars.front().monitorOverrides.front().fontScale = 1.5F;
+    if (!computeConfigChangeSet(before, fontScaleChanged).bars) {
       fail("monitor font_scale override did not mark bars changed");
+    }
+
+    Config blurChanged = before;
+    blurChanged.bars.front().monitorOverrides.front().compositorBlur = false;
+    if (!computeConfigChangeSet(before, blurChanged).bars) {
+      fail("monitor compositor_blur override did not mark bars changed");
     }
   }
 
@@ -1082,6 +1090,7 @@ capsule_radius = 12.0
 capsule_thickness = 0.5
 center = [ "clock", "weather" ]
 color = "#0A0B0C"
+compositor_blur = false
 concave_edge_corners = true
 contact_shadow = true
 enabled = false
@@ -1141,6 +1150,7 @@ widget_spacing = 8
     capsule_thickness = 0.25
     center = [ "media" ]
     color = "#E1E2E3"
+    compositor_blur = true
     concave_edge_corners = false
     contact_shadow = false
     enabled = true
@@ -1310,7 +1320,7 @@ widget_spacing = 8
   checkStorageKeySourceValidation();
   checkPanelFloatingLayerValidation();
   checkClamps();
-  checkMonitorFontScaleChangeSet();
+  checkMonitorOverrideChangeSet();
   checkPluginAutoUpdateMode();
   checkAutoUpdateScopeSelection();
   checkDuplicatePluginSourceRejection();
