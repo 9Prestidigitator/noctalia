@@ -289,6 +289,7 @@ namespace noctalia::config::schema {
         field(&NotificationConfig::position, "position"),
         field(&NotificationConfig::layer, "layer"),
         field(&NotificationConfig::scale, "scale", kScaleRange),
+        field(&NotificationConfig::width, "width", kNotificationWidthRange),
         field(&NotificationConfig::backgroundOpacity, "background_opacity", kUnitRange),
         field(&NotificationConfig::border, "border"),
         colorField(&NotificationConfig::borderColor, "border_color"),
