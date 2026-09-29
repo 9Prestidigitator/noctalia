@@ -2205,6 +2205,7 @@ namespace noctalia::config::schema {
           field(&BarCapsuleGroupStyle::members, "members"),
           colorField(&BarCapsuleGroupStyle::fill, "fill"),
           capsuleBorderField(&BarCapsuleGroupStyle::border, &BarCapsuleGroupStyle::borderSpecified, "border"),
+          field(&BarCapsuleGroupStyle::borderWidth, "border_width", kBarCapsuleBorderWidthRange),
           optionalColorField(&BarCapsuleGroupStyle::foreground, "foreground"),
           field(&BarCapsuleGroupStyle::padding, "padding", kBarCapsulePaddingRange),
           optionalFloatField(&BarCapsuleGroupStyle::radius, "radius", kBarCapsuleRadiusRangeF),
@@ -2315,6 +2316,7 @@ namespace noctalia::config::schema {
         optionalDoubleField(&BarConfig::widgetCapsuleRadius, "capsule_radius", kBarCapsuleRadiusRangeD),
         field(&BarConfig::widgetCapsuleOpacity, "capsule_opacity", kBarOpacityRange),
         capsuleBorderField(&BarConfig::widgetCapsuleBorder, &BarConfig::widgetCapsuleBorderSpecified, "capsule_border"),
+        field(&BarConfig::widgetCapsuleBorderWidth, "capsule_border_width", kBarCapsuleBorderWidthRange),
         field(&BarConfig::hoverHighlight, "hover_highlight"),
         subTable(&BarConfig::deadZone, "dead_zone", barDeadZoneSchema()),
         field(&BarConfig::actions, "actions"),
@@ -2385,6 +2387,9 @@ namespace noctalia::config::schema {
         capsuleBorderField(
             &BarMonitorOverride::widgetCapsuleBorder, &BarMonitorOverride::widgetCapsuleBorderSpecified,
             "capsule_border"
+        ),
+        optionalFloatField(
+            &BarMonitorOverride::widgetCapsuleBorderWidth, "capsule_border_width", kBarCapsuleBorderWidthRange
         ),
         optionalBoolField(&BarMonitorOverride::hoverHighlight, "hover_highlight"),
         // capsule_group: read-only here (overrides serialize via the resolved bar).
