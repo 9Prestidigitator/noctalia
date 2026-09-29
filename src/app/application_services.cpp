@@ -1273,11 +1273,38 @@ void Application::initSystemBusServices() {
       m_keyboardBacklightService.reset();
     }
 
+    // NetworkManager is preferred, and its backend follows the bus name when NetworkManager starts later
+    // or restarts. When it is not running at startup, a standalone wpa_supplicant or iwd takes over if
+    // one is; otherwise the NetworkManager backend waits for it to appear.
     try {
       m_networkService = std::make_unique<NetworkManagerService>(*m_systemBus);
+    } catch (const std::exception& e) {
+      kLog.warn("NetworkManager backend disabled: {}", e.what());
+    }
+    if (m_networkService == nullptr || !m_networkService->available()) {
+      try {
+        m_networkService = std::make_unique<WpaSupplicantService>(*m_systemBus);
+        kLog.info("network service active (wpa_supplicant)");
+      } catch (const std::exception& e) {
+        kLog.warn("wpa_supplicant unavailable ({}), trying iwd", e.what());
+        try {
+          m_networkService = std::make_unique<IwdService>(*m_systemBus);
+          kLog.info("network service active (iwd)");
+        } catch (const std::exception& e2) {
+          kLog.warn("iwd unavailable ({})", e2.what());
+        }
+      }
+    } else {
+      kLog.info("network service active");
+    }
+
+    if (m_networkService != nullptr) {
       m_networkService->setChangeCallback(
           [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
-            onNetworkStateChangedForEvents(state, origin);
+            // NetworkManager leaving or returning is not a radio toggle.
+            if (m_networkService->available()) {
+              onNetworkStateChangedForEvents(state, origin);
+            }
             m_externalIpService.onNetworkChanged();
             m_bar.refresh();
             if (shouldRefreshControlCenter()) {
@@ -1288,51 +1315,6 @@ void Application::initSystemBusServices() {
       if (m_networkService->hasStateSnapshot()) {
         m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
       }
-      kLog.info("network service active");
-    } catch (const std::exception& e) {
-      kLog.warn("NetworkManager unavailable ({}), trying wpa_supplicant", e.what());
-      try {
-        m_networkService = std::make_unique<WpaSupplicantService>(*m_systemBus);
-        m_networkService->setChangeCallback(
-            [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
-              onNetworkStateChangedForEvents(state, origin);
-              m_externalIpService.onNetworkChanged();
-              m_bar.refresh();
-              if (shouldRefreshControlCenter()) {
-                m_panelManager.refresh();
-              }
-            }
-        );
-        if (m_networkService->hasStateSnapshot()) {
-          m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
-        }
-        kLog.info("network service active (wpa_supplicant)");
-      } catch (const std::exception& e2) {
-        kLog.warn("wpa_supplicant unavailable ({}), trying iwd", e2.what());
-        try {
-          m_networkService = std::make_unique<IwdService>(*m_systemBus);
-          m_networkService->setChangeCallback(
-              [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
-                onNetworkStateChangedForEvents(state, origin);
-                m_externalIpService.onNetworkChanged();
-                m_bar.refresh();
-                if (shouldRefreshControlCenter()) {
-                  m_panelManager.refresh();
-                }
-              }
-          );
-          if (m_networkService->hasStateSnapshot()) {
-            m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
-          }
-          kLog.info("network service active (iwd)");
-        } catch (const std::exception& e3) {
-          kLog.warn("network service disabled: {}", e3.what());
-          m_networkService.reset();
-        }
-      }
-    }
-
-    if (m_networkService != nullptr) {
       m_externalIpService.setNetworkService(m_networkService.get());
       m_externalIpService.setChangeCallback([this, shouldRefreshControlCenter]() {
         m_bar.refresh();

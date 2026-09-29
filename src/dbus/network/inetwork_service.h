@@ -22,6 +22,9 @@ public:
   virtual void setChangeCallback(ChangeCallback callback) = 0;
   virtual void refresh() = 0;
 
+  // False while the backend daemon is off the bus. State then reads as defaults and actions are no-ops;
+  // the UI presents the network as unavailable.
+  [[nodiscard]] virtual bool available() const noexcept { return true; }
   [[nodiscard]] virtual const NetworkState& state() const noexcept = 0;
   [[nodiscard]] virtual bool hasStateSnapshot() const noexcept = 0;
   [[nodiscard]] virtual const std::vector<AccessPointInfo>& accessPoints() const noexcept = 0;
