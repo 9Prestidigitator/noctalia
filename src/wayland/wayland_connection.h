@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <poll.h>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -131,7 +132,12 @@ struct WaylandOutputHeadInfo {
 
 class WaylandConnection {
 public:
-  WaylandConnection();
+  enum class Purpose : std::uint8_t {
+    Shell,
+    Screencopy,
+  };
+
+  explicit WaylandConnection(Purpose purpose = Purpose::Shell);
   ~WaylandConnection();
 
   WaylandConnection(const WaylandConnection&) = delete;
@@ -140,6 +146,8 @@ public:
   using ChangeCallback = std::function<void()>;
 
   bool connect();
+  bool
+  connectUntil(std::chrono::steady_clock::time_point deadline, WaylandConnection* eventConnection, std::string& error);
 
   // Delegate setters
   void setOutputChangeCallback(ChangeCallback callback);
@@ -301,8 +309,10 @@ private:
   void bindTextInputService();
   void bindVirtualKeyboardService();
   void cleanup();
+  [[nodiscard]] bool setupDisplay(wl_display* display, std::string& error);
   void logStartupSummary() const;
 
+  Purpose m_purpose = Purpose::Shell;
   wl_display* m_display = nullptr;
   wl_registry* m_registry = nullptr;
   wl_compositor* m_compositor = nullptr;
@@ -364,3 +374,30 @@ private:
   WaylandToplevels m_toplevelsHandler;
   WaylandExtForeignToplevels m_extForeignToplevels;
 };
+
+namespace wayland {
+
+  struct DispatchTarget {
+    WaylandConnection* connection = nullptr;
+    std::string_view role;
+  };
+
+  enum class DispatchStatus : std::uint8_t {
+    Completed,
+    TimedOut,
+    PollFailed,
+    ConnectionFailed,
+  };
+
+  struct DispatchResult {
+    DispatchStatus status = DispatchStatus::Completed;
+    WaylandConnection* failedConnection = nullptr;
+    std::string error;
+  };
+
+  [[nodiscard]] DispatchResult dispatchUntil(
+      std::span<const DispatchTarget> targets, std::chrono::steady_clock::time_point deadline,
+      const std::function<bool()>& completed
+  );
+
+} // namespace wayland

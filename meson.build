@@ -1153,6 +1153,14 @@ install_data(
 )
 
 if build_tests
+  wayland_server_dep = dependency('wayland-server')
+
+  _wlr_screencopy_test_server_h = custom_target('wlr-screencopy-unstable-v1-test-server-header',
+    input: 'protocols/wlr-screencopy-unstable-v1.xml',
+    output: 'wlr-screencopy-unstable-v1-test-server-protocol.h',
+    command: [wayland_scanner, 'server-header', '@INPUT@', '@OUTPUT@'],
+  )
+
   _cpp_test_names = [
     'annotation_document',
     'annotation_raster',
@@ -1300,6 +1308,13 @@ if build_tests
     endif
     test(test_name, test_exe, args: test_args)
   endforeach
+
+  screencopy_connection_isolation_exe = executable('screencopy_connection_isolation_test',
+    sources: files('tests/screencopy_connection_isolation_test.cpp') + [_wlr_screencopy_test_server_h],
+    dependencies: [noctalia_core_dep, wayland_server_dep],
+    override_options: ['b_ndebug=false'],
+  )
+  test('screencopy_connection_isolation', screencopy_connection_isolation_exe)
 
   upower_integration_exe = executable('upower_charge_limit_integration_test',
     sources: files('tests/upower_charge_limit_integration_test.cpp'),
