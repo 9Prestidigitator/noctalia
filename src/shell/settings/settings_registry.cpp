@@ -2149,11 +2149,20 @@ namespace settings {
         "outline border width thickness"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-monitors.label"),
-        tr("settings.schema.shell.osd-monitors.description"), {"osd", "monitors"},
-        ListSetting{.items = cfg.osd.monitors, .suggestedOptions = env.availableOutputs},
-        "monitor output display screen hud overlay"
+        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-follow-focused-output.label"),
+        tr("settings.schema.shell.osd-follow-focused-output.description"), {"osd", "follow_focused_output"},
+        ToggleSetting{cfg.osd.followFocusedOutput}, "monitor output display focused active hud overlay"
     ));
+    {
+      auto e = makeEntry(
+          SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-monitors.label"),
+          tr("settings.schema.shell.osd-monitors.description"), {"osd", "monitors"},
+          ListSetting{.items = cfg.osd.monitors, .suggestedOptions = env.availableOutputs},
+          "monitor output display screen hud overlay"
+      );
+      e.visibleWhen = [](const Config& c) { return !c.osd.followFocusedOutput; };
+      entries.push_back(std::move(e));
+    }
     entries.push_back(makeEntry(
         SettingsSection::Osd, "kinds", tr("settings.schema.shell.osd-kinds-volume.label"),
         tr("settings.schema.shell.osd-kinds-volume.description"), {"osd", "kinds", "volume"},
@@ -3152,11 +3161,21 @@ namespace settings {
         "outline border width thickness"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Notifications, "toasts", tr("settings.schema.notifications.monitors.label"),
-        tr("settings.schema.notifications.monitors.description"), {"notification", "monitors"},
-        ListSetting{.items = cfg.notification.monitors, .suggestedOptions = env.availableOutputs},
-        "monitor output display screen"
+        SettingsSection::Notifications, "toasts", tr("settings.schema.notifications.follow-focused-output.label"),
+        tr("settings.schema.notifications.follow-focused-output.description"),
+        {"notification", "follow_focused_output"}, ToggleSetting{cfg.notification.followFocusedOutput},
+        "monitor output display focused active"
     ));
+    {
+      auto e = makeEntry(
+          SettingsSection::Notifications, "toasts", tr("settings.schema.notifications.monitors.label"),
+          tr("settings.schema.notifications.monitors.description"), {"notification", "monitors"},
+          ListSetting{.items = cfg.notification.monitors, .suggestedOptions = env.availableOutputs},
+          "monitor output display screen"
+      );
+      e.visibleWhen = [](const Config& c) { return !c.notification.followFocusedOutput; };
+      entries.push_back(std::move(e));
+    }
     entries.push_back(makeEntry(
         SettingsSection::Notifications, "history", tr("settings.schema.notifications.keep-dismissed-in-history.label"),
         tr("settings.schema.notifications.keep-dismissed-in-history.description"),

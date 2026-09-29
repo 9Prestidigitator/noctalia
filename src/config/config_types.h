@@ -760,6 +760,7 @@ struct OsdConfig {
   bool border = true; // outline around OSD popup cards
   ColorSpec borderColor = colorSpecFromRole(ColorRole::Outline);
   float borderWidth = Style::borderWidth;
+  bool followFocusedOutput = false;
   int offsetX = 20;
   int offsetY = 8;
   std::vector<std::string> monitors;
@@ -782,6 +783,7 @@ struct NotificationConfig {
   bool border = true;              // outline around toast cards
   ColorSpec borderColor = colorSpecFromRole(ColorRole::Outline);
   float borderWidth = Style::borderWidth;
+  bool followFocusedOutput = false;
   int offsetX = 20; // absolute horizontal margin from the screen edge
   int offsetY = 8;  // absolute vertical margin from the screen edge
   std::vector<std::string> monitors;
