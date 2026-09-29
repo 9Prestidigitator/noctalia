@@ -1788,6 +1788,11 @@ namespace settings {
         "calendar date format strftime chrono"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Shell, "general", tr("settings.schema.shell.readline-shortcuts.label"),
+        tr("settings.schema.shell.readline-shortcuts.description"), {"shell", "readline_shortcuts"},
+        ToggleSetting{cfg.shell.readlineShortcuts}, "readline emacs keyboard shortcuts text input line editing"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Shell, "keyboard-layout", tr("settings.schema.shell.keyboard-layout-custom-labels.label"),
         tr("settings.schema.shell.keyboard-layout-custom-labels.description"),
         {"shell", "keyboard_layout", "custom_labels"},

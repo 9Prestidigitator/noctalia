@@ -19,6 +19,7 @@ telemetry_enabled     = false        # send an anonymous startup ping
 niri_overview_type_to_launch_enabled = false # opt in to type-to-launch from niri overview
 polkit_agent          = false
 password_style        = "default"    # default | random
+readline_shortcuts    = false        # readline-style shortcuts in every text field (Ctrl+A = line start)
 settings_show_advanced = true        # show advanced settings by default in Settings
 settings_expand_all_groups = false   # expand every group on Settings pages by default
 # settings_window_translucent = false  # translucent settings window background

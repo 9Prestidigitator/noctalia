@@ -1160,6 +1160,8 @@ struct ShellConfig {
   bool umbrielOverviewTypeToLaunchEnabled = false;
   bool polkitAgent = false;
   PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
+  /// Readline-style editing shortcuts in every text input (Ctrl+A moves to the start instead of selecting all).
+  bool readlineShortcuts = false;
   AnimationConfig animation;
   std::string avatarPath;
   bool settingsShowAdvanced = true;

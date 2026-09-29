@@ -489,6 +489,7 @@ location = "https://example.invalid/bad"
     c.shell.lang = "en_US";
     c.shell.timeFormat = "{:%H:%M:%S}";
     c.shell.passwordMaskStyle = PasswordMaskStyle::RandomIcons;
+    c.shell.readlineShortcuts = true;
     c.shell.clipboardHistoryMaxEntries = 80;
     c.shell.clipboardAutoPaste = ClipboardAutoPasteMode::CtrlV;
     c.storage.keySource = StorageKeySource::File;
