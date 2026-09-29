@@ -1320,6 +1320,7 @@ if build_tests
   upower_integration_exe = executable('upower_charge_limit_integration_test',
     sources: files('tests/upower_charge_limit_integration_test.cpp'),
     dependencies: noctalia_core_dep,
+    override_options: ['b_ndebug=false'],
   )
   secret_collection_probe_integration_exe = executable('secret_collection_probe_integration_test',
     sources: files('tests/secret_collection_probe_integration_test.cpp'),
