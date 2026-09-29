@@ -943,6 +943,10 @@ void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallb
   m_seatHandler.setKeyboardEventCallback(std::move(callback));
 }
 
+void WaylandConnection::setKeyboardModifiersCallback(WaylandSeat::KeyboardModifiersCallback callback) {
+  m_seatHandler.setKeyboardModifiersCallback(std::move(callback));
+}
+
 void WaylandConnection::setLockKeysChangeCallback(WaylandSeat::LockKeysChangeCallback callback) {
   m_seatHandler.setLockKeysChangeCallback(std::move(callback));
 }
