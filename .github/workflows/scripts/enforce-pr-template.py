@@ -27,6 +27,7 @@ TYPE_CHANGE_ITEMS = (
     "Breaking change",
     "Refactoring",
     "Build / packaging",
+    "Documentation only",
 )
 # "Breaking change" qualifies another type; every other type is a primary kind of change.
 PRIMARY_CHANGE_TYPES = tuple(item for item in TYPE_CHANGE_ITEMS if item != "Breaking change")
