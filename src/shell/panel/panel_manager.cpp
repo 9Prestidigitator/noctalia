@@ -1508,9 +1508,8 @@ void PanelManager::closePanel(bool animateClose) {
 }
 
 void PanelManager::destroyPanel() {
-  if (m_attachedToBar && m_attachedPanelStateCallback && m_output != nullptr) {
-    m_attachedPanelStateCallback(m_output, m_sourceBarName, false);
-  }
+  wl_output* const attachedOutput = m_attachedToBar ? m_output : nullptr;
+  const std::string attachedBarName = m_sourceBarName;
   if (m_attachedToBar && m_attachedPanelGeometryCallback && m_output != nullptr) {
     m_attachedPanelGeometryCallback(m_output, m_sourceBarName, std::nullopt);
   }
@@ -1573,6 +1572,9 @@ void PanelManager::destroyPanel() {
   m_attachedOpenAnimationPending = false;
   if (m_platform != nullptr) {
     m_platform->stopKeyRepeat();
+  }
+  if (attachedOutput != nullptr && m_attachedPanelStateCallback) {
+    m_attachedPanelStateCallback(attachedOutput, attachedBarName, false);
   }
   if (m_panelClosedCallback) {
     m_panelClosedCallback();
