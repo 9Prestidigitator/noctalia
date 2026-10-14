@@ -154,7 +154,7 @@ private:
   [[nodiscard]] bool isWorkspacePeekActive() const noexcept;
   void applyPendingWorkspaceReveal();
   void reevaluateSmartAutoHide();
-  void startHideFadeOut(BarInstance& instance);
+  void startHideFadeOut(BarInstance& instance, bool immediate = false);
   void finishSmartLayerTransition(BarInstance& instance);
   static void applyBackgroundPalette(BarInstance& instance);
   [[nodiscard]] std::string showBarIpc(std::string_view args);

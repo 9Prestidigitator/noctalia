@@ -1712,12 +1712,18 @@ void WindowSwitcher::positionPanel(Instance& instance, float screenW, float scre
 void WindowSwitcher::buildScene(Instance& instance, std::uint32_t width, std::uint32_t height) {
   UiPhaseScope layoutPhase(UiPhase::Layout);
 
+  if (instance.carouselAnimId != 0) {
+    instance.animations.cancel(instance.carouselAnimId);
+    instance.carouselAnimId = 0;
+  }
+
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
   const float scale = instance.uiLayoutScale;
 
   Renderer& renderer = instance.surface->renderTarget().renderer();
   instance.sceneRoot = ui::node({});
+  instance.sceneRoot->setAnimationManager(&instance.animations);
   instance.sceneRoot->setSize(w, h);
 
   auto input = ui::inputArea({});
@@ -1733,6 +1739,20 @@ void WindowSwitcher::buildScene(Instance& instance, std::uint32_t width, std::ui
         .preedit = key.preedit,
     };
     (void)onKeyboardEvent(event);
+  });
+
+  input->setOnAxisHandler([this](const InputArea::PointerData& data) -> bool {
+    if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
+      return false;
+    }
+
+    const float steps = data.scrollSteps();
+    if (steps == 0.0F) {
+      return false;
+    }
+
+    cycleSelection(steps > 0.0F ? 1 : -1);
+    return true;
   });
 
   const WindowSwitcherStyleLayout& layout = instance.styleLayout;
@@ -1785,7 +1805,6 @@ void WindowSwitcher::buildScene(Instance& instance, std::uint32_t width, std::ui
   instance.tiles.clear();
   instance.counterLabel = nullptr;
   instance.countBackground = nullptr;
-  instance.carouselAnimId = 0;
   const ShellConfig::WindowSwitcherConfig switcherConfig =
       m_config != nullptr ? m_config->config().shell.windowSwitcher : ShellConfig::WindowSwitcherConfig{};
   instance.style = switcherConfig.style;

@@ -68,6 +68,7 @@ struct BarMonitorOverride {
   std::optional<std::string> position;
   std::optional<bool> enabled;
   std::optional<bool> autoHide;
+  std::optional<std::int32_t> autoHideDelayMs;
   std::optional<bool> smartAutoHide;
   std::optional<bool> showOnWorkspaceSwitch;
   std::optional<bool> reserveSpace;
@@ -111,6 +112,7 @@ struct BarMonitorOverride {
   std::optional<double> widgetCapsuleOpacity;
   std::optional<float> widgetCapsuleBorderWidth;
   std::optional<bool> hoverHighlight;
+  std::optional<bool> showTooltip;
   BarDeadZoneOverride deadZone;
 
   [[nodiscard]] bool isAutoHideEnabled(bool baseAutoHide, bool baseSmartAutoHide) const noexcept {
@@ -136,6 +138,7 @@ struct BarConfig {
   std::string position = "top";
   bool enabled = true;
   bool autoHide = false;             // slide out when the pointer leaves; reveal on edge approach
+  std::int32_t autoHideDelayMs = 0;  // wait after pointer leaves before hiding; 0 hides immediately
   bool smartAutoHide = false;        // hide while the active workspace has windows; show when it is empty
   bool showOnWorkspaceSwitch = true; // with auto_hide: briefly reveal when the active workspace changes
 
@@ -201,6 +204,8 @@ struct BarConfig {
   float widgetCapsuleBorderWidth = Style::borderWidth;
   // Soft tint of a widget's foreground color over the widget under the pointer (per member in capsule groups).
   bool hoverHighlight = true;
+  // Default for the per-widget `show_tooltip`; widgets on this bar show hover tooltips unless overridden.
+  bool showTooltip = true;
   BarDeadZoneConfig deadZone;
   std::vector<BarMonitorOverride> monitorOverrides;
 
@@ -404,6 +409,7 @@ struct CommonWidgetOptions {
   bool interactive = true;
   float contentScale = 1.0F;
   float fontScale = 1.0F;
+  bool showTooltip = true;
   std::optional<ColorSpec> color;
   std::optional<ColorSpec> iconColor;
   std::optional<std::int64_t> labelFontWeight;
@@ -556,6 +562,12 @@ struct LockscreenConfig {
   // Lock on PrepareForSleep (lid close / systemctl suspend) via logind sleep-delay inhibit.
   // Distinct from idle/session lock_and_suspend actions.
   bool lockBeforeSuspend = true;
+  // Opt-in convenience window: allow passwordless unlock for this many seconds
+  // after locking on any keypress or mouse movement beyond 5px. Defaults to 0
+  // (disabled) so existing configurations keep requiring authentication; grace is
+  // additionally revoked on sleep transitions (PrepareForSleep, Lock & Suspend)
+  // and on logind resume as a defense in depth.
+  int gracePeriodSeconds = 0;
   bool fingerprint = true;
   bool allowEmptyPassword = false;
   bool blurredDesktop = false;
@@ -636,6 +648,51 @@ constexpr EnumOption<DockLauncherPosition> kDockLauncherPositions[] = {
     {DockLauncherPosition::End, "end", "settings.options.dock-launcher-position.end"},
 };
 
+struct DockMonitorOverride {
+  // tableName is the TOML subtable key; match may be overridden explicitly.
+  std::string tableName;
+  std::string match;
+  std::optional<bool> enabled;
+  std::optional<DockEdge> position;
+  std::optional<bool> activeMonitorOnly;
+  std::optional<std::int32_t> iconSize;
+  std::optional<std::int32_t> mainAxisPadding;
+  std::optional<std::int32_t> crossAxisPadding;
+  std::optional<std::int32_t> itemSpacing;
+  std::optional<float> backgroundOpacity;
+  std::optional<ColorSpec> border;
+  std::optional<float> borderWidth;
+  std::optional<std::int32_t> radius;
+  std::optional<std::int32_t> radiusTopLeft;
+  std::optional<std::int32_t> radiusTopRight;
+  std::optional<std::int32_t> radiusBottomLeft;
+  std::optional<std::int32_t> radiusBottomRight;
+  std::optional<bool> concaveEdgeCorners;
+  std::optional<std::int32_t> marginEnds;
+  std::optional<std::int32_t> marginEdge;
+  std::optional<bool> shadow;
+  std::optional<bool> showRunning;
+  std::optional<bool> autoHide;
+  std::optional<bool> smartAutoHide;
+  std::optional<std::string> layer;
+  std::optional<bool> reserveSpace;
+  std::optional<float> activeScale;
+  std::optional<float> inactiveScale;
+  std::optional<bool> magnification;
+  std::optional<float> magnificationScale;
+  std::optional<float> activeOpacity;
+  std::optional<float> inactiveOpacity;
+  std::optional<bool> showDots;
+  std::optional<bool> showInstanceCount;
+  std::optional<DockLauncherPosition> launcherPosition;
+  std::optional<std::string> launcherIcon;
+  std::optional<std::string> launcherCustomImage;
+  std::optional<bool> launcherCustomImageColorize;
+  std::optional<std::vector<std::string>> pinned;
+
+  bool operator==(const DockMonitorOverride&) const = default;
+};
+
 struct DockConfig {
   bool enabled = false; // opt-in; dock is hidden by default
   DockEdge position = DockEdge::Bottom;
@@ -677,9 +734,11 @@ struct DockConfig {
   std::string launcherCustomImage = "";     // image path; overrides launcherIcon glyph when set
   bool launcherCustomImageColorize = false; // tint the custom image with the icon color role
   std::vector<std::string> pinned;          // desktop entry IDs to always show
-  std::vector<std::string> monitors;        // connector names to show on; empty = all outputs
+  std::vector<DockMonitorOverride> monitorOverrides;
   bool operator==(const DockConfig&) const = default;
 };
+
+[[nodiscard]] DockConfig resolveDockMonitorOverride(const DockConfig& base, const DockMonitorOverride& override);
 
 struct DesktopWidgetsGridState {
   bool visible = true;
@@ -989,6 +1048,23 @@ struct LauncherProviderConfig {
   bool operator==(const LauncherProviderConfig&) const = default;
 };
 
+// Modifier that must be held to move/resize an already selected capture region.
+enum class ScreenshotRegionModifier : std::uint8_t {
+  None = 0,
+  Super = 1,
+  Ctrl = 2,
+  Alt = 3,
+  Shift = 4,
+};
+
+constexpr EnumOption<ScreenshotRegionModifier> kScreenshotRegionModifiers[] = {
+    {ScreenshotRegionModifier::None, "none", "settings.options.screenshot.region-modifier.none"},
+    {ScreenshotRegionModifier::Super, "super", "settings.options.screenshot.region-modifier.super"},
+    {ScreenshotRegionModifier::Ctrl, "ctrl", "settings.options.screenshot.region-modifier.ctrl"},
+    {ScreenshotRegionModifier::Alt, "alt", "settings.options.screenshot.region-modifier.alt"},
+    {ScreenshotRegionModifier::Shift, "shift", "settings.options.screenshot.region-modifier.shift"},
+};
+
 struct ShellConfig {
   struct AnimationConfig {
     bool enabled = true;
@@ -1006,9 +1082,12 @@ struct ShellConfig {
 
   struct PanelConfig {
     PanelTransparencyMode transparencyMode = PanelTransparencyMode::Solid;
-    bool borders = true;                   // outline on floating panel surfaces
+    bool borders = true; // outline on floating panel surfaces
+    ColorSpec borderColor = colorSpecFromRole(ColorRole::Outline);
+    float borderWidth = Style::borderWidth;
     bool shadow = true;                    // cast the global [shell.shadow] from panel surfaces
     bool listItemBackground = false;       // filled rounded background behind launcher/clipboard list items
+    bool wallpaperShowNames = true;        // caption wallpaper picker thumbnails with their file name
     std::string floatingLayer = "overlay"; // top | overlay; attached panels follow their bar
     PanelPlacement launcherPlacement = PanelPlacement::Floating;
     PanelPlacement clipboardPlacement = PanelPlacement::Floating;
@@ -1037,15 +1116,60 @@ struct ShellConfig {
   // Launcher behavior/appearance. Panel placement for the launcher surface stays
   // under [shell.panel] (launcher_placement/position/open_near_click_launcher),
   // parallel to every other surface.
+  enum class LauncherSearchPosition : std::uint8_t {
+    Top = 0,
+    Bottom = 1,
+  };
+
+  static constexpr EnumOption<LauncherSearchPosition> kLauncherSearchPositions[] = {
+      {LauncherSearchPosition::Top, "top", "settings.options.shell.launcher-search-position.top"},
+      {LauncherSearchPosition::Bottom, "bottom", "settings.options.shell.launcher-search-position.bottom"},
+  };
+
+  enum class LauncherLayout : std::uint8_t {
+    Full = 0,
+    Simple = 1,
+  };
+
+  static constexpr EnumOption<LauncherLayout> kLauncherLayouts[] = {
+      {LauncherLayout::Full, "full", "settings.options.shell.launcher-layout.full"},
+      {LauncherLayout::Simple, "simple", "settings.options.shell.launcher-layout.simple"},
+  };
+
+  enum class LauncherDefaultView : std::uint8_t {
+    Recent = 0,
+    Pinned = 1,
+    All = 2,
+    Categories = 3,
+  };
+
+  static constexpr EnumOption<LauncherDefaultView> kLauncherDefaultViews[] = {
+      {LauncherDefaultView::Recent, "recent", "settings.options.shell.launcher-default-view.recent"},
+      {LauncherDefaultView::Pinned, "pinned", "settings.options.shell.launcher-default-view.pinned"},
+      {LauncherDefaultView::All, "all", "settings.options.shell.launcher-default-view.all"},
+      {LauncherDefaultView::Categories, "categories", "settings.options.shell.launcher-default-view.categories"},
+  };
+
   struct LauncherConfig {
+    static constexpr std::int32_t kDefaultWidth = 760;
+
+    LauncherLayout layout = LauncherLayout::Full;
+    std::int32_t width = kDefaultWidth;
+    LauncherSearchPosition searchPosition = LauncherSearchPosition::Bottom;
+    LauncherDefaultView defaultView = LauncherDefaultView::Recent;
+    // Simple layout only: show the category chip row under the search field.
     bool categories = true;
+    bool categoryIconsOnly = false;
+    bool showSettingsButton = true;
+    bool showSessionButton = true;
     bool showIcons = true;
     bool showAppOriginIndicator = true;
     bool compact = false;
     bool appGrid = false;
     bool showAppActions = false;
+    bool trackUsage = true;
     bool sortByUsage = true;
-    // Desktop entry IDs shown first in the launcher when it opens without a query.
+    // Desktop entry IDs shown in manual order in the Pinned view.
     std::vector<std::string> pinned;
     /// When true, refresh currency exchange rates from libqalculate's online sources.
     bool fetchExchangeRates = true;
@@ -1106,6 +1230,7 @@ struct ShellConfig {
     std::string pipeCommand;
     std::string directory;       // empty = XDG Pictures directory
     std::string filenamePattern; // empty = screenshot_%Y%m%d_%H%M%S
+    ScreenshotRegionModifier regionModifier = ScreenshotRegionModifier::None;
 
     bool operator==(const ScreenshotConfig&) const = default;
   };
@@ -1146,6 +1271,7 @@ struct ShellConfig {
   bool popupBorders = true;
   bool popupShadows = true;
   bool cardBorders = true;
+  bool showCloseButtons = true;
   std::string fontFamily = "sans-serif";
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
   std::string timeFormat = "{:%H:%M}";
@@ -1259,6 +1385,8 @@ struct CalendarConfig {
   };
 
   bool enabled = false;
+  bool dedupeEvents = false; // collapse an occurrence that appears in more than one calendar, across accounts too
+  std::vector<std::string> dedupeIgnorePatterns; // regexes stripped from a title before two events are compared
   std::int32_t refreshMinutes = 15;
   std::string eventDateFormat = "%A %e %B";
   std::string eventTimeFormat = "%H:%M";
@@ -1347,6 +1475,10 @@ struct SystemConfig {
 struct AudioConfig {
   bool enableOverdrive = false;
   bool enableSounds = true;
+  bool enableVolumeSounds = true;
+  bool enableNotificationSounds = true;
+  bool enablePowerSounds = true;
+  bool enableScreenshotSounds = true;
   float soundVolume = 0.5F;
   std::string soundTheme = "freedesktop";
 

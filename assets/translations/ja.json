@@ -1875,10 +1875,6 @@
         "main-axis-padding": {
           "description": "アイコン列の両端の内側余白（最初のアイコンの前と最後のアイコンの後）"
         },
-        "monitors": {
-          "description": "ドックを表示する画面を選択します（空欄の場合はすべての画面に表示）。使用中の画面のみを対象とする設定は、ここで選択した画面内で適用されます。",
-          "label": "画面"
-        },
         "pinned-apps": {
           "description": "ドックにピン留めしたアプリのデスクトップエントリID",
           "label": "ピン留めしたアプリ"
@@ -2174,10 +2170,6 @@
           "description": "検索結果でアプリと並べてアプリ操作項目を表示",
           "label": "アプリの操作を表示"
         },
-        "launcher-app-grid": {
-          "description": "検索結果がアプリのみの場合、ラベル付きのアプリアイコンを格子状に表示",
-          "label": "アプリ一覧を格子表示"
-        },
         "launcher-app-origin-indicator": {
           "description": "アプリの検索結果にパッケージ配布元の表示を追加",
           "label": "アプリ配布元を表示"
@@ -2221,6 +2213,10 @@
         "launcher-global-windows": {
           "description": "開いているウィンドウをプレフィックスなしの検索にも表示",
           "label": "全体検索でウィンドウを使用"
+        },
+        "launcher-grid": {
+          "description": "検索結果がアプリのみの場合、ラベル付きのアプリアイコンを格子状に表示",
+          "label": "アプリ一覧を格子表示"
         },
         "launcher-ignored-panels": {
           "description": "パネル提供元が一覧表示しないパネル（例：認証要求、セットアップウィザード）",
