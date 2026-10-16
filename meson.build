@@ -264,6 +264,7 @@ _luau_sources = files(
   'third_party/luau/VM/src/ltm.cpp',
   'third_party/luau/VM/src/ludata.cpp',
   'third_party/luau/VM/src/lutf8lib.cpp',
+  'third_party/luau/VM/src/lvector.cpp',
   'third_party/luau/VM/src/lveclib.cpp',
   'third_party/luau/VM/src/lvmexecute.cpp',
   'third_party/luau/VM/src/lvmload.cpp',
@@ -746,6 +747,7 @@ _noctalia_sources = files(
   'src/shell/settings/settings_sheet_modal.cpp',
   'src/shell/settings/settings_window_mutations.cpp',
   'src/shell/settings/settings_window_popups.cpp',
+  'src/shell/settings/settings_window_palette.cpp',
   'src/shell/settings/settings_window_scene.cpp',
   'src/shell/settings/settings_window.cpp',
   'src/shell/test/test_panel.cpp',
@@ -966,6 +968,7 @@ _noctalia_sources = files(
   'src/compositors/niri/niri_keyboard_backend.cpp',
   'src/compositors/niri/niri_workspace_backend.cpp',
   'src/compositors/umbriel/umbriel_runtime.cpp',
+  'src/compositors/umbriel/umbriel_audio_provider.cpp',
   'src/compositors/umbriel/umbriel_event_handler.cpp',
   'src/compositors/umbriel/umbriel_workspace_backend.cpp',
   'src/compositors/umbriel/umbriel_keyboard_backend.cpp',
@@ -1165,6 +1168,12 @@ if build_tests
     command: [wayland_scanner, 'server-header', '@INPUT@', '@OUTPUT@'],
   )
 
+  _idle_test_server_h = custom_target('ext-idle-notify-v1-test-server-header',
+    input: wayland_protos_dir / 'staging/ext-idle-notify/ext-idle-notify-v1.xml',
+    output: 'ext-idle-notify-v1-test-server-protocol.h',
+    command: [wayland_scanner, 'server-header', '@INPUT@', '@OUTPUT@'],
+  )
+
   _cpp_test_names = [
     'annotation_document',
     'annotation_raster',
@@ -1206,6 +1215,7 @@ if build_tests
     'desktop_entry_launch',
     'desktop_entry_localization',
     'desktop_entry_symlink',
+    'desktop_entry_watch',
     'disk_mounts',
     'dock_edge_overlap',
     'dock_pinned_apps',
@@ -1251,11 +1261,13 @@ if build_tests
     'notification_dnd',
     'notification_filter',
     'notification_history_dismiss',
+    'notification_history_image_bounds',
     'notification_history_utf8',
     'notification_inline_reply',
     'notification_internal_history',
     'path_browse',
     'pipewire_error',
+    'umbriel_audio_provider',
     'privacy_capture_classification',
     'plugin_bindings',
     'plugin_catalog',
@@ -1340,6 +1352,20 @@ if build_tests
     override_options: ['b_ndebug=false'],
   )
   test('screencopy_connection_isolation', screencopy_connection_isolation_exe)
+
+  idle_manager_exe = executable('idle_manager_test',
+    sources: files('tests/idle_manager_test.cpp') + [_idle_test_server_h],
+    dependencies: [noctalia_core_dep, wayland_server_dep],
+    override_options: ['b_ndebug=false'],
+  )
+  test('idle_manager', idle_manager_exe)
+
+  brightness_service_exe = executable('brightness_service_test',
+    sources: files('tests/brightness_service_test.cpp'),
+    dependencies: [noctalia_core_dep, wayland_server_dep],
+    override_options: ['b_ndebug=false'],
+  )
+  test('brightness_service', brightness_service_exe, timeout: 60)
 
   upower_integration_exe = executable('upower_charge_limit_integration_test',
     sources: files('tests/upower_charge_limit_integration_test.cpp'),

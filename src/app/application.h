@@ -126,6 +126,9 @@ class NotificationDBusHost;
 class PipeWirePollSource;
 class PipeWireService;
 class WirePlumberMixer;
+namespace compositors::umbriel {
+  class UmbrielAudioProvider;
+}
 class PipeWireSpectrum;
 class PipeWireSpectrumPollSource;
 class PolkitAgent;
@@ -221,6 +224,7 @@ private:
   void scheduleGreeterAutoSync();
   bool runShellCommandBlocking(const std::string& command);
   bool runIdleAction(const IdleActionRequest& action);
+  bool setOutputPower(bool on);
   void onIconThemeChanged();
   void onGraphicsReset(RenderGraphicsResetStatus status);
   void recoverGraphicsAfterReset();
@@ -268,6 +272,7 @@ private:
   bool m_releaseSleepDelayWhenLocked = false;
   // Set before Noctalia-initiated suspend so PrepareForSleep skips lock-before-sleep.
   bool m_skipLockOnNextSleep = false;
+  std::uint64_t m_outputPowerRequestGeneration = 0;
   std::unique_ptr<AccountsService> m_accountsService;
   std::unique_ptr<ScreenSaverService> m_screenSaverService;
   std::unique_ptr<ScreenSaverPollSource> m_screenSaverPollSource;
@@ -323,6 +328,8 @@ private:
   std::unique_ptr<WirePlumberMixer> m_wirePlumberMixer;
   std::unique_ptr<EasyEffectsService> m_easyEffectsService;
   std::unique_ptr<PipeWireSpectrum> m_pipewireSpectrum;
+  std::unique_ptr<compositors::umbriel::UmbrielAudioProvider> m_umbrielAudioProvider;
+  std::uint64_t m_umbrielAudioListener = 0;
   std::shared_ptr<SoundPlayer> m_soundPlayer;
 
   TelemetryService m_telemetryService;

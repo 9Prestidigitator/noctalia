@@ -1292,6 +1292,7 @@ namespace noctalia::config::schema {
         enumField(&ThemeConfig::mode, "mode", kThemeModes),
         enumField(&ThemeConfig::shellMode, "shell_mode", kShellThemeModes),
         field(&ThemeConfig::pureBlackDark, "pure_black_dark"),
+        field(&ThemeConfig::syncColorScheme, "sync_color_scheme"),
         subTable(&ThemeConfig::templates, "templates", templatesSchema()),
     };
     return s;
@@ -1660,6 +1661,7 @@ namespace noctalia::config::schema {
         field(&ShellConfig::setupWizardEnabled, "setup_wizard_enabled"),
         field(&ShellConfig::niriOverviewTypeToLaunchEnabled, "niri_overview_type_to_launch_enabled"),
         field(&ShellConfig::umbrielOverviewTypeToLaunchEnabled, "umbriel_overview_type_to_launch_enabled"),
+        field(&ShellConfig::umbrielAudioProviderEnabled, "umbriel_audio_provider_enabled"),
         field(&ShellConfig::polkitAgent, "polkit_agent"),
         enumField(&ShellConfig::passwordMaskStyle, "password_style", kPasswordMaskStyles),
         field(&ShellConfig::readlineShortcuts, "readline_shortcuts"),
